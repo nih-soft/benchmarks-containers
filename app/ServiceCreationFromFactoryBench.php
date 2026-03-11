@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bench;
 
 use Bench\Builder\LaravelBuilder;
+use Bench\Builder\NihBuilder;
 use Bench\Builder\PhpDiBuilder;
 use Bench\Builder\SpiralBuilder;
 use Bench\Builder\SymfonyCompiledBuilder;
@@ -14,6 +15,9 @@ use Bench\Stub\ServiceFactory;
 use Bench\Stub\SimpleService;
 use DI\Container as PhpDiContainer;
 use Illuminate\Container\Container as LaravelContainer;
+use NIH\Container\Arg as NihArg;
+use NIH\Container\Container as NihContainer;
+use NIH\Container\ContainerConfig;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
@@ -28,7 +32,7 @@ use Yiisoft\Di\Container as YiiContainer;
 use function DI\create as php_di_create;
 use function DI\factory as php_di_factory;
 
-#[Revs(1000), Warmup(2), Iterations(20)]
+#[Revs(5000), Warmup(5), Iterations(30)]
 #[BeforeMethods('prepare')]
 final class ServiceCreationFromFactoryBench implements BenchInterface
 {
@@ -38,6 +42,8 @@ final class ServiceCreationFromFactoryBench implements BenchInterface
     private LaravelContainer $laravel;
     private SpiralContainer $spiral;
     private PhpDiContainer $phpdi;
+    private NihContainer $nihAuto;
+    private NihContainer $nihManual;
 
     public function prepare(): void
     {
@@ -108,6 +114,30 @@ final class ServiceCreationFromFactoryBench implements BenchInterface
                 ];
             }
         );
+
+        $this->nihAuto = NihBuilder::build(
+            context: __METHOD__,
+            shared: false,
+            build: static function (ContainerConfig $config): void {
+                $config->auto(ServiceFactory::class)->shared();
+                $config->auto(SimpleService::class)->callback(
+                    static fn (ServiceFactory $factory): SimpleService => $factory->create()
+                );
+            }
+        );
+
+        $this->nihManual = NihBuilder::build(
+            context: __METHOD__,
+            shared: false,
+            build: static function (ContainerConfig $config): void {
+                $config->manual(ServiceFactory::class)
+                    ->to(ServiceFactory::class)
+                    ->shared();
+                $config->manual(SimpleService::class)
+                    ->callback(static fn (ServiceFactory $factory): SimpleService => $factory->create())
+                    ->argument('factory', NihArg::get(ServiceFactory::class));
+            }
+        );
     }
 
     public function benchSymfonyRuntime(): void
@@ -152,9 +182,17 @@ final class ServiceCreationFromFactoryBench implements BenchInterface
         assert($instance instanceof SimpleService);
     }
 
-    public function benchLaminas(): void
+    public function benchNihAuto(): void
     {
-        // Idk how to do it, is it supported at all?
-        usleep(30);
+        $instance = $this->nihAuto->get(SimpleService::class);
+
+        assert($instance instanceof SimpleService);
+    }
+
+    public function benchNihManual(): void
+    {
+        $instance = $this->nihManual->get(SimpleService::class);
+
+        assert($instance instanceof SimpleService);
     }
 }

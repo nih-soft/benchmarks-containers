@@ -18,5 +18,7 @@ interface BenchInterface
 
     public function benchPhpDi(): void;
 
-    public function benchLaminas(): void;
+    public function benchNihAuto(): void;
+
+    public function benchNihManual(): void;
 }

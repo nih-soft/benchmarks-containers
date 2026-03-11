@@ -1,10 +1,17 @@
 # Containers benchmarks
 
-This benchmark shows the performance of the PHP dependency injection containers.
+This project compares the performance of several PHP dependency injection containers on PHP 8.5.
 
 ```bash
 composer bench
 ```
+
+Benchmarks currently include Symfony (runtime and compiled), Yii, Laravel, Spiral, PHP-DI, and NIH Container in two modes:
+
+- `benchNihAuto`: automatic dependency resolution
+- `benchNihManual`: manual service definitions
+
+Current benchmark settings: `revs=5000`, `warmup=5`, `iterations=30`.
 
 ## Results
 
@@ -23,18 +30,19 @@ NonSharedServiceCreationByNameBench
 +----------------------+------+-----+----------+---------+---------+
 | subject              | revs | its | mem_peak | mode    | rstdev  |
 +----------------------+------+-----+----------+---------+---------+
-| benchSymfonyRuntime  | 1000 | 20  | 2.331mb  | 1.401μs | ±21.02% |
-| benchSymfonyCompiled | 1000 | 20  | 2.331mb  | 0.121μs | ±15.62% |
-| benchYii             | 1000 | 20  | 2.330mb  | 0.652μs | ±14.86% |
-| benchLaravel         | 1000 | 20  | 2.330mb  | 0.897μs | ±14.04% |
-| benchSpiral          | 1000 | 20  | 2.330mb  | 2.216μs | ±6.21%  |
-| benchPhpDi           | 1000 | 20  | 2.330mb  | 0.714μs | ±15.66% |
-| benchLaminas         | 1000 | 20  | 2.330mb  | 0.424μs | ±26.24% |
+| benchSymfonyRuntime  | 5000 | 30  | 2.558mb  | 1.132μs | ±4.90%  |
+| benchSymfonyCompiled | 5000 | 30  | 2.558mb  | 0.112μs | ±38.21% |
+| benchYii             | 5000 | 30  | 2.558mb  | 0.636μs | ±5.68%  |
+| benchLaravel         | 5000 | 30  | 2.558mb  | 1.234μs | ±7.73%  |
+| benchSpiral          | 5000 | 30  | 2.558mb  | 2.496μs | ±10.23% |
+| benchPhpDi           | 5000 | 30  | 2.558mb  | 0.769μs | ±20.11% |
+| benchNihAuto         | 5000 | 30  | 2.558mb  | 0.430μs | ±8.29%  |
+| benchNihManual       | 5000 | 30  | 2.558mb  | 0.423μs | ±6.73%  |
 +----------------------+------+-----+----------+---------+---------+
 ```
 
-- Best: **Symfony** (0.121μs)
-- Worst: **Spiral** (2.216μs)
+- Best: **Symfony Compiled** (0.112μs)
+- Worst: **Spiral** (2.496μs)
 
 ### SharedServiceCreationByNameBench
 
@@ -50,18 +58,19 @@ SharedServiceCreationByNameBench
 +----------------------+------+-----+----------+---------+---------+
 | subject              | revs | its | mem_peak | mode    | rstdev  |
 +----------------------+------+-----+----------+---------+---------+
-| benchSymfonyRuntime  | 1000 | 20  | 2.330mb  | 0.138μs | ±26.40% |
-| benchSymfonyCompiled | 1000 | 20  | 2.330mb  | 0.041μs | ±16.09% |
-| benchYii             | 1000 | 20  | 2.330mb  | 0.048μs | ±11.47% |
-| benchLaravel         | 1000 | 20  | 2.330mb  | 0.206μs | ±14.76% |
-| benchSpiral          | 1000 | 20  | 2.330mb  | 0.774μs | ±25.12% |
-| benchPhpDi           | 1000 | 20  | 2.330mb  | 0.046μs | ±24.64% |
-| benchLaminas         | 1000 | 20  | 2.330mb  | 0.042μs | ±21.90% |
+| benchSymfonyRuntime  | 5000 | 30  | 2.558mb  | 0.162μs | ±26.75% |
+| benchSymfonyCompiled | 5000 | 30  | 2.558mb  | 0.047μs | ±18.34% |
+| benchYii             | 5000 | 30  | 2.558mb  | 0.055μs | ±35.13% |
+| benchLaravel         | 5000 | 30  | 2.558mb  | 0.223μs | ±32.82% |
+| benchSpiral          | 5000 | 30  | 2.558mb  | 0.542μs | ±15.59% |
+| benchPhpDi           | 5000 | 30  | 2.558mb  | 0.049μs | ±13.87% |
+| benchNihAuto         | 5000 | 30  | 2.558mb  | 0.045μs | ±19.10% |
+| benchNihManual       | 5000 | 30  | 2.558mb  | 0.044μs | ±27.43% |
 +----------------------+------+-----+----------+---------+---------+
 ```
 
-- Best: **Symfony** (0.041μs)
-- Worst: **Spiral** (0.774μs)
+- Best: **NIH Manual** (0.044μs)
+- Worst: **Spiral** (0.542μs)
 
 ### ServiceWithAutowireBench
 
@@ -77,18 +86,19 @@ ServiceWithAutowireBench
 +----------------------+------+-----+----------+---------+---------+
 | subject              | revs | its | mem_peak | mode    | rstdev  |
 +----------------------+------+-----+----------+---------+---------+
-| benchSymfonyRuntime  | 1000 | 20  | 2.336mb  | 0.134μs | ±7.46%  |
-| benchSymfonyCompiled | 1000 | 20  | 2.336mb  | 0.041μs | ±8.78%  |
-| benchYii             | 1000 | 20  | 2.336mb  | 0.048μs | ±22.22% |
-| benchLaravel         | 1000 | 20  | 2.336mb  | 0.202μs | ±5.34%  |
-| benchSpiral          | 1000 | 20  | 2.336mb  | 0.464μs | ±24.02% |
-| benchPhpDi           | 1000 | 20  | 2.336mb  | 0.045μs | ±16.34% |
-| benchLaminas         | 1000 | 20  | 2.336mb  | 0.042μs | ±2.49%  |
+| benchSymfonyRuntime  | 5000 | 30  | 2.627mb  | 0.151μs | ±12.03% |
+| benchSymfonyCompiled | 5000 | 30  | 2.627mb  | 0.042μs | ±7.73%  |
+| benchYii             | 5000 | 30  | 2.627mb  | 0.052μs | ±15.32% |
+| benchLaravel         | 5000 | 30  | 2.627mb  | 0.246μs | ±5.69%  |
+| benchSpiral          | 5000 | 30  | 2.627mb  | 0.545μs | ±5.09%  |
+| benchPhpDi           | 5000 | 30  | 2.627mb  | 0.050μs | ±19.19% |
+| benchNihAuto         | 5000 | 30  | 2.627mb  | 0.044μs | ±10.24% |
+| benchNihManual       | 5000 | 30  | 2.627mb  | 0.044μs | ±6.69%  |
 +----------------------+------+-----+----------+---------+---------+
 ```
 
-- Best: **Symfony** (0.041μs)
-- Worst: **Spiral** (0.464μs)
+- Best: **Symfony Compiled / NIH Auto / NIH Manual** (0.042-0.044μs range)
+- Worst: **Spiral** (0.545μs)
 
 ### ServiceCreationFromFactoryBench
 
@@ -101,19 +111,19 @@ $app->get(Service::class); // Service#2 (from Factory#1->create())
 
 ```bash
 ServiceCreationFromFactoryBench
-+----------------------+------+-----+----------+----------+---------+
-| subject              | revs | its | mem_peak | mode     | rstdev  |
-+----------------------+------+-----+----------+----------+---------+
-| benchSymfonyRuntime  | 1000 | 20  | 2.338mb  | 1.605μs  | ±12.40% |
-| benchSymfonyCompiled | 1000 | 20  | 2.338mb  | 0.146μs  | ±24.72% |
-| benchYii             | 1000 | 20  | 2.338mb  | 0.048μs  | ±36.87% |
-| benchLaravel         | 1000 | 20  | 2.338mb  | 0.968μs  | ±21.22% |
-| benchSpiral          | 1000 | 20  | 2.338mb  | 3.865μs  | ±3.77%  |
-| benchPhpDi           | 1000 | 20  | 2.338mb  | 0.044μs  | ±16.73% |
-| benchLaminas         | 1000 | 20  | -------  | -------- | ------  |
-+----------------------+------+-----+----------+----------+---------+
++----------------------+------+-----+----------+---------+---------+
+| subject              | revs | its | mem_peak | mode    | rstdev  |
++----------------------+------+-----+----------+---------+---------+
+| benchSymfonyRuntime  | 5000 | 30  | 2.631mb  | 1.733μs | ±8.07%  |
+| benchSymfonyCompiled | 5000 | 30  | 2.631mb  | 0.168μs | ±14.57% |
+| benchYii             | 5000 | 30  | 2.630mb  | 0.055μs | ±10.50% |
+| benchLaravel         | 5000 | 30  | 2.630mb  | 1.356μs | ±12.10% |
+| benchSpiral          | 5000 | 30  | 2.630mb  | 4.633μs | ±5.03%  |
+| benchPhpDi           | 5000 | 30  | 2.630mb  | 0.049μs | ±13.23% |
+| benchNihAuto         | 5000 | 30  | 2.630mb  | 2.417μs | ±5.91%  |
+| benchNihManual       | 5000 | 30  | 2.630mb  | 1.224μs | ±7.62%  |
++----------------------+------+-----+----------+---------+---------+
 ```
 
-- Best: **PHP-DI** (0.044μs)
-- Worst: **Spiral** (3.865μs)
-- Note: **Laminas** does not support this functionality (or no?)
+- Best: **PHP-DI** (0.049μs)
+- Worst: **Spiral** (4.633μs)

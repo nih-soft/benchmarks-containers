@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Bench;
 
-use Bench\Builder\LaminasRuntimeBuilder;
 use Bench\Builder\LaravelBuilder;
+use Bench\Builder\NihBuilder;
 use Bench\Builder\PhpDiBuilder;
 use Bench\Builder\SpiralBuilder;
 use Bench\Builder\SymfonyCompiledBuilder;
@@ -14,8 +14,8 @@ use Bench\Builder\YiiBuilder;
 use Bench\Stub\SimpleService;
 use DI\Container as PhpDiContainer;
 use Illuminate\Container\Container as LaravelContainer;
-use Laminas\Di\DefaultContainer as LaminasDefaultContainer;
-use Laminas\Di\Injector as LaminasInjector;
+use NIH\Container\Container as NihContainer;
+use NIH\Container\ContainerConfig;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
@@ -28,7 +28,7 @@ use Yiisoft\Factory\Factory;
 
 use function DI\create as php_di_create;
 
-#[Revs(1000), Warmup(2), Iterations(20)]
+#[Revs(5000), Warmup(5), Iterations(30)]
 #[BeforeMethods('prepare')]
 final class NonSharedServiceCreationByNameBench implements BenchInterface
 {
@@ -38,7 +38,8 @@ final class NonSharedServiceCreationByNameBench implements BenchInterface
     private LaravelContainer $laravel;
     private SpiralContainer $spiral;
     private PhpDiContainer $phpdi;
-    private LaminasDefaultContainer $laminas;
+    private NihContainer $nihAuto;
+    private NihContainer $nihManual;
 
     public function prepare(): void
     {
@@ -94,10 +95,18 @@ final class NonSharedServiceCreationByNameBench implements BenchInterface
             }
         );
 
-        $this->laminas = LaminasRuntimeBuilder::build(
+        $this->nihAuto = NihBuilder::build(
             context: __METHOD__,
-            build: function (LaminasInjector $app): void {
-                $app->create(SimpleService::class);
+            shared: false,
+            build: static function (ContainerConfig $config): void {
+            }
+        );
+
+        $this->nihManual = NihBuilder::build(
+            context: __METHOD__,
+            shared: false,
+            build: static function (ContainerConfig $config): void {
+                $config->manual(SimpleService::class)->to(SimpleService::class);
             }
         );
     }
@@ -150,11 +159,19 @@ final class NonSharedServiceCreationByNameBench implements BenchInterface
         assert($instance !== $this->phpdi->make(SimpleService::class));
     }
 
-    public function benchLaminas(): void
+    public function benchNihAuto(): void
     {
-        $instance = $this->laminas->injector->create(SimpleService::class);
+        $instance = $this->nihAuto->get(SimpleService::class);
 
         assert($instance instanceof SimpleService);
-        assert($instance !== $this->laminas->injector->create(SimpleService::class));
+        assert($instance !== $this->nihAuto->get(SimpleService::class));
+    }
+
+    public function benchNihManual(): void
+    {
+        $instance = $this->nihManual->get(SimpleService::class);
+
+        assert($instance instanceof SimpleService);
+        assert($instance !== $this->nihManual->get(SimpleService::class));
     }
 }

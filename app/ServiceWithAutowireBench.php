@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Bench;
 
-use Bench\Builder\LaminasRuntimeBuilder;
 use Bench\Builder\LaravelBuilder;
+use Bench\Builder\NihBuilder;
 use Bench\Builder\PhpDiBuilder;
 use Bench\Builder\SpiralBuilder;
 use Bench\Builder\SymfonyCompiledBuilder;
@@ -15,8 +15,9 @@ use Bench\Stub\ServiceWithDependency;
 use Bench\Stub\SimpleService;
 use DI\Container as PhpDiContainer;
 use Illuminate\Container\Container as LaravelContainer;
-use Laminas\Di\DefaultContainer as LaminasDefaultContainer;
-use Laminas\Di\Injector as LaminasInjector;
+use NIH\Container\Arg as NihArg;
+use NIH\Container\Container as NihContainer;
+use NIH\Container\ContainerConfig;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
@@ -31,7 +32,7 @@ use Yiisoft\Di\Container as YiiContainer;
 use function DI\autowire as php_di_autowire;
 use function DI\create as php_di_create;
 
-#[Revs(1000), Warmup(2), Iterations(20)]
+#[Revs(5000), Warmup(5), Iterations(30)]
 #[BeforeMethods('prepare')]
 final class ServiceWithAutowireBench implements BenchInterface
 {
@@ -41,7 +42,8 @@ final class ServiceWithAutowireBench implements BenchInterface
     private LaravelContainer $laravel;
     private SpiralContainer $spiral;
     private PhpDiContainer $phpdi;
-    private LaminasDefaultContainer $laminas;
+    private NihContainer $nihAuto;
+    private NihContainer $nihManual;
 
     public function prepare(): void
     {
@@ -105,11 +107,21 @@ final class ServiceWithAutowireBench implements BenchInterface
             }
         );
 
-        $this->laminas = LaminasRuntimeBuilder::build(
+        $this->nihAuto = NihBuilder::build(
             context: __METHOD__,
-            build: function (LaminasInjector $app): void {
-                $app->create(SimpleService::class);
-                $app->create(ServiceWithDependency::class);
+            shared: true,
+            build: static function (ContainerConfig $config): void {
+            }
+        );
+
+        $this->nihManual = NihBuilder::build(
+            context: __METHOD__,
+            shared: true,
+            build: static function (ContainerConfig $config): void {
+                $config->manual(SimpleService::class)->to(SimpleService::class);
+                $config->manual(ServiceWithDependency::class)
+                    ->to(ServiceWithDependency::class)
+                    ->argument('dependency', NihArg::get(SimpleService::class));
             }
         );
     }
@@ -162,9 +174,17 @@ final class ServiceWithAutowireBench implements BenchInterface
         assert($instance->dependency instanceof SimpleService);
     }
 
-    public function benchLaminas(): void
+    public function benchNihAuto(): void
     {
-        $instance = $this->laminas->get(ServiceWithDependency::class);
+        $instance = $this->nihAuto->get(ServiceWithDependency::class);
+
+        assert($instance instanceof ServiceWithDependency);
+        assert($instance->dependency instanceof SimpleService);
+    }
+
+    public function benchNihManual(): void
+    {
+        $instance = $this->nihManual->get(ServiceWithDependency::class);
 
         assert($instance instanceof ServiceWithDependency);
         assert($instance->dependency instanceof SimpleService);
